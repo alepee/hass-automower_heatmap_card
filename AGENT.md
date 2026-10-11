@@ -15,7 +15,7 @@ npm run build        # Bundle dist/automower-heatmap-card.js
 python3 -m http.server 8765   # Then open http://127.0.0.1:8765/demo/index.html
 ```
 
-The demo page runs the card against **synthetic data**, without Home Assistant. Query parameters: `points`, `zones`, `editor`, `filter=all`, `lang=fr`, `height=<px>`.
+The demo page runs the card against **synthetic data**, without Home Assistant. Query parameters: `points`, `zones`, `editor`, `filter=all`, `lang=fr`, `height=<px>`, `at=<lat>,<lon>` (move the demo mower, e.g. to check satellite imagery depth elsewhere).
 
 ## Architecture
 

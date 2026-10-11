@@ -3,19 +3,21 @@ import './leaflet-global.js';
 import 'leaflet.heat';
 import {clusters} from '../history.js';
 import {filterEvents} from '../config.js';
+import {ESRI_IMAGERY, MAX_NATIVE_ZOOM, imageryNativeZoom} from './tiles.js';
 
 const L = window.L;
 const escape = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const notice = document.getElementById('notice');
-let data = null, fitted = false, fitKey = '', baseType = '';
+let data = null, fitted = false, fitKey = '', baseType = '', depthKey = '';
 
 const t = (key, params = {}) => (data?.strings?.[key] ?? key).replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? ''));
 const label = code => data?.labels?.[code] || code;
 const date = s => new Date(s).toLocaleString(data?.locale || undefined);
 
 const map = L.map('map', {maxZoom: 22, fadeAnimation: false}).setView([20, 0], 2);
+const satellite = maxNativeZoom => L.tileLayer(`${ESRI_IMAGERY}/tile/{z}/{y}/{x}`, {maxNativeZoom, maxZoom: 22, attribution: 'Tiles © Esri · Esri, Maxar, Earthstar Geographics, GIS User Community'});
 const bases = {
-  satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxNativeZoom: 19, maxZoom: 22, attribution: 'Tiles © Esri · Esri, Maxar, Earthstar Geographics, GIS User Community'}),
+  satellite: satellite(MAX_NATIVE_ZOOM),
   plan: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxNativeZoom: 19, maxZoom: 22, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}),
 };
 const markers = L.layerGroup().addTo(map), zones = L.layerGroup().addTo(map);
@@ -48,6 +50,20 @@ function render() {
     if (es.length) { map.fitBounds(es.map(e => [e.lat, e.lon]), {padding: [25, 25], maxZoom: c.zoom}); fitted = true; }
     else if (data.center) { map.setView(data.center, c.zoom); fitted = true; }
   }
+  if (fitted && c.map_type === 'satellite') adjustImageryDepth();
+}
+
+// Past the deepest imagery level of the area, upscale that level instead of showing Esri's placeholder tiles.
+async function adjustImageryDepth() {
+  const center = map.getCenter(), key = `${center.lat.toFixed(2)},${center.lng.toFixed(2)}`;
+  if (key === depthKey) return;
+  depthKey = key;
+  const depth = await imageryNativeZoom(center.lat, center.lng, url => fetch(url).then(r => r.json()));
+  if (key !== depthKey || depth === bases.satellite.options.maxNativeZoom) return;
+  const active = map.hasLayer(bases.satellite);
+  if (active) map.removeLayer(bases.satellite);
+  bases.satellite = satellite(depth);
+  if (active) bases.satellite.addTo(map).bringToBack();
 }
 
 const safeRender = () => { try { render(); } catch (error) { notice.hidden = false; notice.textContent = t('map_error', {message: error.message}); } };

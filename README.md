@@ -81,7 +81,7 @@ npm test        # unit tests (node:test)
 npm run build   # bundles dist/automower-heatmap-card.js
 ```
 
-`demo/index.html` runs the card against synthetic data, without Home Assistant. Serve the repository root (`python3 -m http.server`) and open `/demo/index.html`. Query parameters: `points`, `zones`, `editor`, `filter=all`, `lang=fr`.
+`demo/index.html` runs the card against synthetic data, without Home Assistant. Serve the repository root (`python3 -m http.server`) and open `/demo/index.html`. Query parameters: `points`, `zones`, `editor`, `filter=all`, `lang=fr`, `at=<lat>,<lon>`.
 
 ## License
 
