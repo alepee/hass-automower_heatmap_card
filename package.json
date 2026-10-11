@@ -1,6 +1,6 @@
 {
   "name": "automower-heatmap-card",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Home Assistant Lovelace card: heatmap of Husqvarna Automower incidents, located with the mower GPS history.",
   "license": "MIT",
   "author": "Antoine Lépée",
