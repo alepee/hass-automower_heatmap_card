@@ -1,6 +1,6 @@
 # AGENT.md: agent & contributor guide
 
-Canonical, tool-agnostic guidance for any AI coding agent (Claude Code, Codex, Cursor, Aider, …) or human contributor working in this repository. Tool-specific entrypoints (`CLAUDE.md`, editor configs) should defer to this file rather than duplicate it.
+Canonical, tool-agnostic guidance for any AI coding agent (Claude Code, Codex, Cursor, Aider, …) or human contributor working in this repository. Tool-specific entrypoints (editor configs, …) should defer to this file rather than duplicate it.
 
 ## Project Overview
 
