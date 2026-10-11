@@ -101,4 +101,4 @@ class AutomowerHeatmapCard extends HTMLElement {
 if (!customElements.get('automower-heatmap-card')) customElements.define('automower-heatmap-card', AutomowerHeatmapCard);
 const t = translator(language());
 window.customCards = window.customCards || [];
-window.customCards.push({type: 'automower-heatmap-card', name: t('card_name'), description: t('card_description'), preview: false, documentationURL: 'https://github.com/alepee/automower-heatmap-card'});
+window.customCards.push({type: 'automower-heatmap-card', name: t('card_name'), description: t('card_description'), preview: false, documentationURL: 'https://github.com/alepee/hass-automower_heatmap_card'});

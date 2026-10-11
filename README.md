@@ -22,12 +22,12 @@ Any other `lawn_mower` integration exposing an error sensor with a `no_error` st
 
 ### HACS (recommended)
 
-1. HACS → ⋮ → **Custom repositories** → add `https://github.com/alepee/automower-heatmap-card` with the **Dashboard** type.
+1. HACS → ⋮ → **Custom repositories** → add `https://github.com/alepee/hass-automower_heatmap_card` with the **Dashboard** type.
 2. Install **Automower Heatmap Card**, then reload the browser.
 
 ### Manual
 
-1. Download `automower-heatmap-card.js` from the [latest release](https://github.com/alepee/automower-heatmap-card/releases/latest) into `/config/www/`.
+1. Download `automower-heatmap-card.js` from the [latest release](https://github.com/alepee/hass-automower_heatmap_card/releases/latest) into `/config/www/`.
 2. Settings → Dashboards → ⋮ → **Resources** → add `/local/automower-heatmap-card.js` as a **JavaScript module**.
 3. Reload the browser.
 
