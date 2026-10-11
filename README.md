@@ -35,6 +35,8 @@ Any other `lawn_mower` integration exposing an error sensor with a `no_error` st
 
 Add the card from the dashboard editor (**Automower incident heatmap**) and pick the mower: the error sensor and the GPS tracker are suggested automatically from the mower device. Everything can be set from the visual editor.
 
+<img src="docs/editor.png" alt="Visual editor of the card" width="420">
+
 ```yaml
 type: custom:automower-heatmap-card
 entity: lawn_mower.my_mower
