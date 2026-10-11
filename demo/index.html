@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Automower Heatmap Card · demo</title>
+<style>
+  body{margin:0;padding:24px;background:#f3f3f0;font:14px system-ui}
+  .wrap{max-width:1100px;margin:auto;display:grid;grid-template-columns:1fr;gap:24px}
+  [hidden]{display:none!important}
+  ha-card{display:block;border-radius:12px;box-shadow:0 1px 3px #0002;background:white}
+  automower-heatmap-card-editor{display:block;background:white;border-radius:12px;padding:8px 20px}
+</style>
+</head>
+<body>
+<!-- Synthetic data only: a fictional mower in a public park, generated below with a fixed seed. -->
+<div class="wrap">
+  <automower-heatmap-card></automower-heatmap-card>
+  <automower-heatmap-card-editor hidden></automower-heatmap-card-editor>
+</div>
+<script type="module">
+import '../dist/automower-heatmap-card.js';
+
+const params = new URLSearchParams(location.search);
+const lang = params.get('lang') || 'en';
+let seed = 42;
+const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const gauss = () => Math.sqrt(-2 * Math.log(random())) * Math.cos(2 * Math.PI * random());
+
+const origin = [48.85499, 2.29960];
+// Hotspots are placed along the lawn axis (u) and across it (v), in metres, then rotated to the park orientation.
+const axis = [0.675, -0.738], across = [0.738, 0.675];
+const toLatLon = ([u, v]) => {
+  const dx = u * axis[0] + v * across[0], dy = u * axis[1] + v * across[1];
+  return [origin[0] + dy / 111320, origin[1] + dx / (111320 * Math.cos(origin[0] * Math.PI / 180))];
+};
+const hotspots = [
+  {at: [-48, 4], spread: 6, weight: 9, codes: ['no_drive', 'no_drive', 'wheel_motor_overloaded_left']},
+  {at: [8, -9], spread: 5, weight: 6, codes: ['lifted', 'trapped']},
+  {at: [52, 8], spread: 6, weight: 4, codes: ['cutting_system_blocked', 'no_drive']},
+  {at: [-14, 12], spread: 6, weight: 5, codes: ['slope_too_steep', 'upside_down', 'no_drive']},
+];
+const pick = list => list[Math.floor(random() * list.length)];
+const weighted = () => { let r = random() * hotspots.reduce((a, h) => a + h.weight, 0); for (const h of hotspots) if ((r -= h.weight) <= 0) return h; return hotspots[0]; };
+
+const now = Date.now(), errors = [], gps = [];
+const iso = ms => new Date(ms).toISOString();
+let t = now - 29 * 86400000;
+errors.push({entity_id: 'sensor.demo_error', state: 'no_error', last_updated: iso(t)});
+while ((t += (4 + random() * 30) * 3600000) < now - 3600000) {
+  const h = weighted(), [lat, lon] = toLatLon([h.at[0] + gauss() * h.spread, h.at[1] + gauss() * h.spread]);
+  gps.push({entity_id: 'device_tracker.demo', state: 'not_home', last_updated: iso(t - 40000), attributes: {latitude: lat, longitude: lon}});
+  errors.push({entity_id: 'sensor.demo_error', state: pick(h.codes), last_updated: iso(t)});
+  if (random() < .2) errors.push({entity_id: 'sensor.demo_error', state: 'stopped', last_updated: iso(t + 60000)});
+  errors.push({entity_id: 'sensor.demo_error', state: 'no_error', last_updated: iso(t + 600000)});
+}
+
+const labels = {
+  en: {no_drive: 'No drive', lifted: 'Lifted', trapped: 'Trapped', upside_down: 'Upside down', slope_too_steep: 'Slope too steep', cutting_system_blocked: 'Cutting system blocked', wheel_motor_overloaded_left: 'Left wheel motor overloaded', stopped: 'Stopped', low_battery: 'Low battery', no_error: 'No error'},
+  fr: {no_drive: 'Aucune traction', lifted: 'Soulevée', trapped: 'Coincée', upside_down: 'À l’envers', slope_too_steep: 'Pente trop raide', cutting_system_blocked: 'Système de coupe bloqué', wheel_motor_overloaded_left: 'Moteur de roue gauche surchargé', stopped: 'Arrêtée', low_battery: 'Batterie faible', no_error: 'Aucune erreur'},
+}[lang];
+
+const states = {
+  'lawn_mower.demo': {entity_id: 'lawn_mower.demo', state: 'mowing', attributes: {friendly_name: 'Demo mower'}},
+  'sensor.demo_error': {entity_id: 'sensor.demo_error', state: 'no_error', attributes: {friendly_name: 'Demo mower Error', options: Object.keys(labels)}},
+  'device_tracker.demo': {entity_id: 'device_tracker.demo', state: 'not_home', attributes: {friendly_name: 'Demo mower', latitude: origin[0], longitude: origin[1]}},
+};
+const series = {'sensor.demo_error': errors, 'device_tracker.demo': gps};
+const hass = {
+  states, language: lang, locale: {language: lang}, config: {latitude: origin[0], longitude: origin[1]},
+  formatEntityState: (stateObj, value) => labels[value] || value,
+  callWS: async () => [],
+  callApi: async (method, path) => {
+    const url = new URL(path, 'http://demo/'), id = url.searchParams.get('filter_entity_id');
+    const start = Date.parse(decodeURIComponent(url.pathname.split('/').at(-1))), end = Date.parse(url.searchParams.get('end_time'));
+    const rows = series[id] || [], prior = rows.filter(s => Date.parse(s.last_updated) <= start).at(-1);
+    return [[...(prior ? [{...prior, last_updated: iso(start)}] : []), ...rows.filter(s => Date.parse(s.last_updated) > start && Date.parse(s.last_updated) < end)]];
+  },
+};
+
+const config = {type: 'custom:automower-heatmap-card', entity: 'lawn_mower.demo', height: Number(params.get('height') || 520), zoom: 19, show_zones: params.has('zones'), show_points: params.has('points'), error_filter: params.get('filter') || 'terrain'};
+const card = document.querySelector('automower-heatmap-card');
+card.setConfig(config); card.hass = hass;
+if (params.has('editor')) {
+  const editor = document.querySelector('automower-heatmap-card-editor');
+  editor.hidden = false; editor.setConfig({...config, error_filter: 'custom', error_types: ['no_drive', 'lifted']}); editor.hass = hass;
+}
+</script>
+</body>
+</html>
